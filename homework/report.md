@@ -1,10 +1,10 @@
 # 41343110 
 
-## 作業一 之Ackermann Function
+## 作業一 Ackermann Function
 
 ## 解題說明
 
-本題要求用遞迴函式和非遞迴函式，計算 Ackermann 函數 $A(m,n)$ 的值。Ackermann 函數是一個以兩個正整數 m 和 n 為輸入的特殊遞迴函數，其結果會隨著 m, n 的增大而迅速變大。
+Ackermann 函數是一個典型的遞迴函數，其數學定義如下： 1.​ n+1 m=0 A(m,n)= 2. A(m−1,1) m>0,n=0 3. A(m-1,A(m,n-1)) m>0,n>0
 
 ### Ackermann 函數定義如下 :
 | A(m,n)                 | 條件                  |
