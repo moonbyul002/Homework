@@ -97,7 +97,7 @@ int main() {
 ### 編譯與執行指令
 
 ```shell
-$ g++ ack.cpp -std=c++14 -o ack (Visual Studio 2022 為C+14)
+$ g++ ack.cpp -std=c++14 -o ack (Visual Studio 2022 為C++14)
 $ ack.exe
 A(m,n)
 輸入 m 值:
