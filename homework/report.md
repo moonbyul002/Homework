@@ -153,10 +153,15 @@ Ackermann 函數不適合用於實務計算，主要用於理論分析。
 
 ## 解題說明
 
-Ackermann 函數是一個典型的遞迴函數，其數學定義如下：
-		 1.​ n+1				m=0
-A(m,n)=  2. A(m−1,1)		m>0,n=0
-		 3. A(m-1,A(m,n-1))	m>0,n>0
+Ackermann 函數是一個典型的遞迴函數，其數學定義如下： 1.​ n+1 m=0 A(m,n)= 2. A(m−1,1) m>0,n=0 3. A(m-1,A(m,n-1)) m>0,n>0
+
+### Ackermann 函數定義如下 :
+| A(m,n)                 | 條件                  |
+|------------------------|----------------------|
+| n + 1                  | 當 m = 0             |
+| A(m-1, 1)              | 當 n = 0             |
+| A(m-1, A(m, n-1))      | 其他                 |
+
 		 
 ### 解題策略
 
@@ -334,108 +339,166 @@ Ackermann(0,0) = 1
 ## 作業一 之Powerset
 
 ## 解題說明
-
-題目要求使用遞迴函式的方法來輸出集合S()的所有子集合。
-
-例如: 元素設3個空間 , S =(G,C,D) , 請問 powerset(S) 會等於多少呢?
-輸出: (),(G),(C),(D), (G,C), (G,D), (D,G), (G,C,D) } 
+本題目要求對一個給定集合 
+S生成其所有子集合（powerset），並將每個子集合印出。
+集合為 {a, b, c}，其子集合為 {}, {a}, {b}, {c}, {a,b}, {a,c}, {b,c}, {a,b,c}。
 
 ### 解題策略
-這題原本要用二維陣列，但二維陣列會浪費大量記憶體空間，因此改用兩個動態記憶體配置來取代，並能改善使用者的測資輸入問題。輸出部分可以透過 for 迴圈與記憶體位置來判斷，而使用者的測資可能會有重複問題，因此可以加入 if 判斷式來提升程式的準確性。
+
+對每個元素做二元決策：
+
+1.不選擇 → 遞迴下一個元素
+
+2.選擇 → 將元素加入子集合，遞迴下一個元素
+
+遞迴終止條件：
+當處理完最後一個元素，印出當前子集合
 
 ## 程式實作
 
-### IDE:
-Microsoft Visual Studio Code C/C++
+以下為主要程式碼：
 
 ```cpp
 #include <iostream>
-#include <string>
 using namespace std;
-
-void pow(string A[], string s[], int i, int n, int t) {    // A[]:原集合 s[]:當前子集 i:目前處理到A[i] n:集合大小 t:當前子集大小
-    if (i == n) {
-        cout << "{";
-        for (int j = 0; j < t; j++) {
-            cout << s[j];
-            if (j != t - 1) cout << ",";
-        }
-        cout << "}" << endl;
-        return;
+void printSubset(char subset[], int size) {
+    cout << "{";
+    for (int i = 0; i < size; i++) {
+        cout << subset[i];
+        if (i < size - 1) cout << ",";
     }
-    pow(A, s, i + 1, n, t);         // 不加入當前元素 A[i]，繼續處理下一個元素
-    s[t] = A[i];                    // 加入當前元素 A[i] 到子集
-    pow(A, s, i + 1, n, t + 1);     // 繼續處理下一個元素，子集大小 t 增加 1
+    cout << "}" << endl;
 }
-
+void powerset(char set[], int n, int index, char subset[], int subsetSize) {
+    if (index == n) {
+        
+        printSubset(subset, subsetSize);
+        return;
+    } 
+    powerset(set, n, index + 1, subset, subsetSize);
+    subset[subsetSize] = set[index];
+    powerset(set, n, index + 1, subset, subsetSize + 1);
+}
 int main() {
-    int n;
-    cout << "請輸入n個數 : ";
-    cin >> n;
-    string* A = new string[n];
-    string* s = new string[n];
-    cout << "請輸入集合元素 : ";
-    for (int i = 0; i < n; i++) {
-        cin >> A[i];
-    }
-    cout << "集合的冪集為:" << endl;
-    pow(A, s, 0, n, 0);
-
-    delete[] A;
-    delete[] s;
-
+    char set[] = { 'a', 'b', 'c' };
+    int n = 3;
+    char subset[10]; 
+    powerset(set, n, 0, subset, 0);
     return 0;
 }
 ```
 
 ## 效能分析
-1. 空間複雜度：總空間複雜度 $O(n)$
-2. 時間複雜度：總時間複雜度 $O(n * 2^n)$
+
+1. 時間複雜度：程式的時間複雜度為 $O(n⋅2^n)$。
+2. 空間複雜度：空間複雜度為 $O(n)$。
 
 ## 測試與驗證
 
 ### 測試案例
 
-| 測資 | 輸入參數 $n$ , 元素 | 預期輸出 | 實際輸出 |
-|----------|--------------|----------|----------|
-| 測試一   | $n = 1$ , a | () (a)       | () (a)       |
-| 測試二   | $m = 2$ , a b | () (b) (a) (a,b)  | () (b) (a) (a,b)       |
-| 測試三   | $m = 3$ , a b c | () (c) (b) (b,c) (a) (a,c) (a,b) (a,b,c) | () (c) (b) (b,c) (a) (a,c) (a,b) (a,b,c) |
+| 測試案例 | 輸入參數 $n$ | 預期輸出                 | 實際輸出 |
+|----------|--------------|----------              |----------|
+| 測試一   | 輸入程式已固定      |      ()                    | () |
+ |         |                   |        (a)                      | (c)|
+ |          |                   |         (b)                    | (b)|
+ |         |                    |           (c)                  | (b,c)|
+  |        |                    |             (a,b)                | (a)|
+ |         |                    |               (a,c)              |(a,c)|
+ |         |                    |                 (b,c)            |(a,b)|
+ |         |                     |                  (a,b,c)          |(a,b,c)         |
+
+
 ### 編譯與執行指令
 
 ```shell
-$ g++ pow.cpp -std=c++17 -o pow.exe
-$ .\pow.exe
-請輸入n個數 : 3
-請輸入集合元素 : a b c
-集合的冪集為:
-{}
-{c}
-{b}
-{b,c}
-{a}
-{a,c}
-{a,b}
-{a,b,c}
+$ g++ powerset.cpp -std=c++14 -o powerset (Visual Studio 2022 為C+14)
+$ powerset.exe
+(輸出):
+()
+(c)
+(b)
+(b,c)
+(a)
+(a,c)
+(a,b)
+(a,b,c)
 ```
 
 ### 結論
 
-1. 每多一個元素，子集數量就會變成兩倍（也就是 2ⁿ 的成長），所以當 n 很大時，程式會變得很慢、也很吃記憶體。
-2. 可以加入 if 判斷式來提升程式的準確性，當使用者的測資有重複時，可以排除有一樣的子集合
 
-## 申論及開發報告
 
-### 選擇遞迴式回溯法的原因
+    
 
-1. 遞迴直觀：
+## 開發報告
 
-   程式邏輯清楚，對每個元素只需考慮是否加入子集合的兩種情況。
+### 研究背景與目的
 
-2. 動態陣列：
-   
-   利用 new 配置陣列大小，執行時可依使用者輸入決定集合大小，不會浪費大量記憶體空間。
-   
-3. **優缺點**
+集合的子集合（powerset）在計算機科學中非常常見
 
-   優點：程式結構簡潔、易於理解、不需額外資料結構
+本程式的目的是透過 遞迴方法，生成給定集合的所有子集合，並展示其內容。
+### 程式邏輯
+
+每個元素有兩種選擇：
+
+1.不加入子集合
+
+2.加入子集合
+
+使用遞迴逐層選擇每個元素，直到處理完所有元素。
+### 程式設計
+#### printSubset
+```cpp
+void printSubset(char subset[], int size) {
+    cout << "{";
+    for (int i = 0; i < size; i++) {
+        cout << subset[i];
+        if (i < size - 1) cout << ",";
+    }
+    cout << "}" << endl;
+}
+```
+功能：印出子集合內容
+
+輸入：子集合陣列 subset[] 與大小 size
+#### powerset
+```cpp
+void powerset(char set[], int n, int index, char subset[], int subsetSize) {
+    if (index == n) {
+        printSubset(subset, subsetSize);
+        return;
+    }
+    // 不選擇當前元素
+    powerset(set, n, index + 1, subset, subsetSize);
+    // 選擇當前元素
+    subset[subsetSize] = set[index];
+    powerset(set, n, index + 1, subset, subsetSize + 1);
+}
+```
+功能：遞迴生成所有子集合
+
+遞迴結束條件：index == n → 印出子集合
+#### main 主程式
+```cpp
+int main() {
+    char set[] = { 'a', 'b', 'c' };
+    int n = sizeof(set)/sizeof(set[0]);
+    char* subset = new char[n];
+    powerset(set, n, 0, subset, 0);
+    delete[] subset;
+    return 0;
+}
+```
+功能：初始化集合與子集合陣列
+
+呼叫 powerset 遞迴函數
+### 開發心得與申論
+
+#### 開發心得與結論
+
+心得：
+使用 subset 陣列存儲中間結果，易於理解
+#### 申論
+集合的子集合（powerset）是一個基礎而重要的概念，在資料結構與演算法中應用廣泛。
+在程式設計上，我們利用一個陣列暫存當前子集合，遞迴過程中根據選擇動態更新陣列內容，當遞迴到底時，印出子集合。
