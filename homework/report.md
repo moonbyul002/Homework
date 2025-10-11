@@ -282,7 +282,7 @@ int main() {
 ### 編譯與執行指令
 
 ```shell
-$ g++ ack_nonrecursive.cpp -std=c++14 -o ack_nonrecursive (Visual Studio 2022 為C+14)
+$ g++ ack_nonrecursive.cpp -std=c++14 -o ack_nonrecursive (Visual Studio 2022 為C++14)
 $ ack_nonrecursive.exe
 A(m,n)
 輸入m值:(輸入) 0
