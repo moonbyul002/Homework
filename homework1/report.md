@@ -3,7 +3,6 @@
 ## 作業一 Ackermann Function
 
 # 遞迴方式
-
 ## 解題說明
 
 Ackermann 函數是一個典型的遞迴函數，其數學定義如下： 1.​ n+1 m=0 A(m,n)= 2. A(m−1,1) m>0,n=0 3. A(m-1,A(m,n-1)) m>0,n>0
