@@ -1,5 +1,5 @@
 # 41343110
-# Problem1
+#Problem1
 
 ## 解題說明
 本題要求以物件導向的方式設計一個 Polynomial（多項式）類別，支援以下功能：
@@ -222,12 +222,11 @@ int main() {
 ### 編譯與執行指令
 #### 測試輸入
 ```cpp
-p1.NewTerm(3, 2);  // 3x^2
-p1.NewTerm(2, 1);  // 2x
-p1.NewTerm(1, 0);  // 1
-
-p2.NewTerm(1, 1);  // x
-p2.NewTerm(1, 0);  // 1
+p1.NewTerm(3, 2);  
+p1.NewTerm(2, 1);  
+p1.NewTerm(1, 0);  
+p2.NewTerm(1, 1);  
+p2.NewTerm(1, 0);  
 ```
 #### 測試輸出
 ```shell
@@ -265,3 +264,188 @@ P1(2) = 17
 
 - 顯示格式貼近數學習慣，支援正負號輸出。
 
+# Problem2
+## 解題說明
+- 資料結構：使用Term結構來儲存單一項的係數和指數。Polynomial類別則包含一個Term型態的動態陣列termArray，以及容量（capacity）和實際項數（terms）的變數。這種設計能有效利用記憶體，只儲存非零項。
+- 動態擴充：當新增項次且陣列滿載時，NewTerm方法會自動將陣列容量加倍，確保程式能處理任意數量的項次。
+- 排序與合併：NewTerm方法在新增項次後，會檢查是否已有相同指數的項次，若有則合併係數。接著，它會對整個陣列進行排序，以指數遞減的順序排列，這有助於優化顯示和運算。
+- 多項式求值：Eval方法提供一個機制，能計算多項式在特定變數值下的結果。它遍歷所有項次，並將每個項次的運算結果相加。
+- 運算子多載：
+- operator>>：多載輸入運算子，使得使用者能透過cin方便地輸入多項式。
+- operator<<：多載輸出運算子，能將多項式以易於閱讀的格式輸出到cout。
+## 程式實作
+```cpp
+#include <iostream>
+#include <cmath>
+using namespace std;
+
+class Term {
+    friend class Polynomial;
+    friend std::ostream& operator<<(std::ostream&, const Polynomial&);
+private:
+    float coef;  
+    int exp;    
+};
+class Polynomial {
+    friend istream& operator>>(istream& in, Polynomial& poly);
+    friend ostream& operator<<(ostream& out, const Polynomial& poly);
+
+private:
+    Term* termArray;
+    int capacity;
+    int terms;
+
+public:
+    Polynomial() {
+        capacity = 10;
+        terms = 0;
+        termArray = new Term[capacity];
+    }
+    void NewTerm(float c, int e) {
+        if (c == 0) return;
+        for (int i = 0; i < terms; i++) {
+            if (termArray[i].exp == e) {
+                termArray[i].coef += c;
+                return;
+            }
+        }
+        if (terms == capacity) {
+            capacity *= 2;
+            Term* temp = new Term[capacity];
+            for (int i = 0; i < terms; i++)
+                temp[i] = termArray[i];
+            delete[] termArray;
+            termArray = temp;
+        }
+
+        termArray[terms].coef = c;
+        termArray[terms].exp = e;
+        terms++;
+        for (int i = 0; i < terms - 1; i++) {
+            for (int j = i + 1; j < terms; j++) {
+                if (termArray[i].exp < termArray[j].exp)
+                    swap(termArray[i], termArray[j]);
+            }
+        }
+    }
+
+    float Eval(float x) const {
+        float result = 0;
+        for (int i = 0; i < terms; i++)
+            result += termArray[i].coef * pow(x, termArray[i].exp);
+        return result;
+    }
+};
+istream& operator>>(istream& in, Polynomial& poly) {
+    int n;
+    cout << "Enter number of terms: ";
+    in >> n;
+
+    poly.terms = 0; 
+
+    for (int i = 0; i < n; i++) {
+        float c;
+        int e;
+        cout << "Enter coefficient and exponent for term " << i + 1 << ": ";
+        in >> c >> e;
+        poly.NewTerm(c, e);
+    }
+
+    return in;
+}
+ostream& operator<<(ostream& out, const Polynomial& poly) {
+    if (poly.terms == 0) {
+        out << "0";
+        return out;
+    }
+
+    for (int i = 0; i < poly.terms; i++) {
+        float c = poly.termArray[i].coef;
+        int e = poly.termArray[i].exp;
+
+        if (i > 0) {
+            if (c >= 0) out << " + ";
+            else { out << " - "; c = -c; }
+        }
+        else if (c < 0) {
+            out << "-";
+            c = -c;
+        }
+
+        if (e == 0)
+            out << c;
+        else if (e == 1)
+            out << c << "x";
+        else
+            out << c << "x^" << e;
+    }
+
+    return out;
+}
+
+int main() {
+    Polynomial p;
+
+    cin >> p;           
+    cout << "p(x) = " << p << endl; 
+
+    float x;
+    cout << "Enter x value: ";
+    cin >> x;
+    cout << "p(" << x << ") = " << p.Eval(x) << endl;
+
+    return 0;
+}
+
+```
+## 效能分析
+#### 時間複雜度NewTerm()：合併項次：最差情況下，需遍歷所有現有項次，時間複雜度為 $\(O(\text{terms})\)$
+- 陣列擴充：當需要擴充容量時，會建立新陣列並複製所有舊項次，時間複雜度為 $\(O(\text{terms})\)$
+- 排序：在每次新增項次後都進行排序。使用的泡沫排序時間複雜度為 $\(O(\text{terms}^{2})\)$
+  若多項式項數較多，這會成為效能瓶頸
+- 總體：綜合來看，NewTerm()的最差時間複雜度為 $\(O(\text{terms}^{2})\)$，主要受排序操作影響。
+- Eval()：該方法遍歷所有項次，並對每個項次進行pow()運算，時間複雜度為 $\(O(\text{terms}\cdot \log (\text{exp}))\)$，其中pow()運算的時間複雜度取決於其演算法。
+- operator<<()：該方法遍歷所有項次進行輸出，時間複雜度為 $\(O(\text{terms})\)$。operator>>()：在輸入 $\(n\)$ 個項次時，會迴圈呼叫 NewTerm() \(n\) 次。
+- operator>>() 的總時間複雜度為 $\(O(n^{3})\)$。
+#### 空間複雜度
+- Polynomial 物件：termArray 是動態陣列，其空間隨項次增加而擴充。當有 \(n\) 個項次時，空間複雜度為 \(O(n)\)。
+- NewTerm()：當擴充容量時，會建立一個兩倍大的臨時陣列，因此需要額外的 \(O(n)\) 空間。
+## 測試與驗證
+| 測試案例 | 輸入資料 | 
+|----------|--------------|
+| 測試一   |        3(個資料)   |     
+|  第一資料        |1 1|
+|  第二資料        |   2 1       | 
+|  第三資料        |   2 3      | 
+|  x的值        |   4    |
+
+| 輸出資料 |  p(x)|p(4)| 
+|----------|--------------|------|
+| 所有資料統整  |       2x^3 + 3x   |   140  |
+
+### 編譯與執行指令
+#### 測試輸入
+```shell
+Enter number of terms: 3
+Enter coefficient and exponent for term 1: 1 1
+Enter coefficient and exponent for term 2: 2 1
+Enter coefficient and exponent for term 3: 2 3
+
+Enter x value: 4
+```
+#### 測試輸出
+```shell
+p(x) = 2x^3 + 3x
+
+p(4) = 140
+```
+## 效能量測
+優化建議：
+- 改善排序：將NewTerm中的泡沫排序替換為更高效的演算法，例如插入排序。由於新項次只插入一個，插入排序的效能會比完整重新排序要好。更好的方法是在插入時保持排序狀態。
+- 優化求值：對於 Eval，可以考慮使用霍納法則（Horner's method），這能避免在每個迴圈中重複計算pow()，從而提高求值速度。
+## 申論及開發報告
+### 效能討論：
+分析目前實作的效能瓶頸（特別是NewTerm中的排序）。
+提出優化建議，如使用更高效的排序演算法或霍納法則，並討論這些優化對時間複雜度的影響。
+### 心得討論
+這份程式碼提供了一個基礎的多項式類別實作，展示了物件導向程式設計的核心概念。然而，它的效能（特別是在處理大量項次時）有待改進。透過替換低效的排序演算法和優化求值方法，可以顯著提升程式的效率和可擴展性。這份報告不僅解釋了程式碼的功能，也指出了其局限性，並提出了明確的改進方向。
