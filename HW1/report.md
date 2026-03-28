@@ -180,11 +180,36 @@ O(1)
 ### 開發目的
 
 本程式的目標是以最小堆（MinHeap）實作一個最小優先佇列（MinPQ）的抽象介面，提供以下基本操作:
-- IsEmpty()：判斷優先列是否為空
+- IsEmpty()：判斷優先陣列是否為空
 - Top()：取得目前最小元素（不刪除）
 - Push(x)：插入一個新元素
 - Pop()：刪除目前最小元素 -（額外功能）PrintByIndex()：以陣列索引順序輸出堆的內容（用於檢查）
+### 開發環境與語言
+- 語言：C++
+- 編譯器：g++ / clang++（建議 C++11 以上）
+- 主要標頭：<iostream>, <string>（備註：程式有用到 runtime_error，建議補上 #include <stdexcept> 以符合標準。）
+### 資料結構與設計概念
+- 最小堆（Min-Heap）性質,最小堆是一種完全二元樹，滿足：
+  - 每個節點的值 <= 其子節點的值 
+  - 因此根節點（root）永遠是最小值
+- 陣列表示法,本程式用動態陣列 heap[] 存堆，並從索引 1 開始（常見寫法）：
+  - heap[1]：根（最小值）
+  - 對於索引 i：
+    - parent = i/2
+    - left child = 2*i
+    - right child = 2*i + 1
+### 模組設計與類別說明
+- 抽象介面 MinPQ<T>
+  使用 virtual 宣告純虛函式，定義最小優先佇列應有的行為，讓不同實作（例如 heap、leftist heap 等）可以共用同一套介面。
 
+- 具體實作 MinHeap<T>
+  主要成員：
+
+    - T* heap：存資料的動態陣列
+    - int capacity：容量
+    - int size：目前元素量（堆大小）
+    - 並提供：
+      - Resize()：當容量不足時，將容量倍增並搬移資料
 # Quit_2 Binary Search Tree
 
 ## 解題說明
@@ -402,3 +427,15 @@ deleteNode 效能:刪除操作時間複雜度：O(h)
   - key：用於 BST 排序的鍵
   - left：左子樹指標
   - right：右子樹指標 
+### 模組設計
+- 隨機插入資料的產生策略
+  - 建立 1~n 的序列（保證不重複）
+  - 使用 Fisher–Yates Shuffle 產生隨機排列
+  - 依排列順序插入 BST
+- 高度定義與計算,高度採用節點層數定義：
+  - 空樹高度 = 0
+  - 非空樹高度 = 1 + max(leftHeight, rightHeight)
+- 輸出與資料整理,程式輸出每筆測試資料包含：
+  - n
+  - height
+  - height/log2(n)
