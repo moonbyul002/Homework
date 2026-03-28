@@ -1,7 +1,7 @@
 # 41343110 
 # Quit_1 Max/Min Heap
 
-## 申論及開發報告
+
 ## 解題說明
 本題目要求實作一個 最小優先佇列（Min Priority Queue），並使用 最小堆積（Min Heap） 作為底層資料結構。
 
@@ -32,7 +32,7 @@
 ## 程式實作
 ```cpp
   #include <iostream>
-#include <stdexcept>
+#include <string>
 using namespace std;
 
 template <class T>
@@ -175,103 +175,163 @@ O(1)
 
 ### 結論
 本題成功以 MinHeap 實作最小優先佇列，透過陣列表示完全二元樹，並利用向上調整與向下調整維持堆積性質，使得各項操作皆能有效率地完成。
-
+## 申論及開發報告
 
 # Quit_2 Binary Search Tree
-## 申論及開發報告
+
 ## 解題說明
+(a)
 ### 題目說明 
 本程式主要在探討 二元搜尋樹（Binary Search Tree, BST）在隨機插入情況下的高度變化
-### 目標
+### 實作方法
 - 建立一棵 空的 Binary Search Tree (BST)
 - 插入 n 個隨機數
 - 計算樹的高度 height: h(n)=1+max(h(left),h(right))
-- 計算比值：height/ $\log_2 n$ 
+- 計算比值：height/ $\log_2 n$
+(b)
+### 題目說明 
+寫一個 C++ 函式，在 Binary Search Tree（BST，二元搜尋樹） 中：
+- 給定一個 key k
+- 把 key = k 的那個節點（pair）從 BST 刪掉
+- 刪除後樹仍然要符合 BST 性質：
+  - 左子樹所有 key 都 < 此節點 key
+  - 右子樹所有 key 都 > 此節點 key
+### 實作方法
+- 要刪的節點是葉節點（沒有子樹）：直接刪掉
+- 只有一個子樹：用那個子樹頂替被刪節點的位置
+- 有兩個子樹：用「中序後繼」（右子樹最小值）或「中序前驅」（左子樹最大值）來替換，再把那個後繼/前驅節點刪掉
 ## 程式實作
 (a)
 ```cpp
 #include <iostream>
 #include <cmath>
 #include <cstdlib>
+#include <ctime>
 using namespace std;
+
 struct Node {
     int key;
     Node* left;
     Node* right;
     Node(int k) : key(k), left(nullptr), right(nullptr) {}
 };
+
 Node* insert(Node* root, int key) {
     if (!root) return new Node(key);
 
-    if (key < root->key)
-        root->left = insert(root->left, key);
-    else
-        root->right = insert(root->right, key);
-
+    if (key < root->key) root->left = insert(root->left, key);
+    else if (key > root->key) root->right = insert(root->right, key);
+    
     return root;
 }
+
 int height(Node* root) {
     if (!root) return 0;
-    return 1 + max(height(root->left), height(root->right));
+    int hl = height(root->left);
+    int hr = height(root->right);
+    return 1 + (hl > hr ? hl : hr);
 }
+
+void destroy(Node* root) {
+    if (!root) return;
+    destroy(root->left);
+    destroy(root->right);
+    delete root;
+}
+
+// Fisher–Yates shuffle
+void shuffleArray(int* a, int n) {
+    for (int i = n - 1; i > 0; --i) {
+        int j = rand() % (i + 1);
+        int tmp = a[i];
+        a[i] = a[j];
+        a[j] = tmp;
+    }
+}
+
 int main() {
-    for (int n = 100; n <= 10000; n += 1000) {
+    srand((unsigned)time(nullptr)); 
+
+    int ns[] = { 100, 500, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000 };
+
+    for (int idx = 0; idx < (int)(sizeof(ns) / sizeof(ns[0])); ++idx) {
+        int n = ns[idx];
         Node* root = nullptr;
 
-        for (int i = 0; i < n; i++) {
-            int val = rand(); // 隨機數
-            root = insert(root, val);
+        
+        int* arr = new int[n];
+        for (int i = 0; i < n; ++i) arr[i] = i + 1;
+
+       
+        shuffleArray(arr, n);
+        for (int i = 0; i < n; ++i) {
+            root = insert(root, arr[i]);
         }
 
         int h = height(root);
-        double ratio = h / log2(n);
+        double ratio = h / log2((double)n);
 
         cout << "n = " << n
             << ", height = " << h
-            << ", height/log2(n) = " << ratio << endl;
+            << ", height/log2(n) = " << ratio << "\n";
+
+        delete[] arr;
+        destroy(root);
     }
+
+    return 0;
 }
 ```
 (b)
 ```cpp
-Node* findMin(Node* root) {
-    while (root->left)
-        root = root->left;
-    return root;
+using namespace std;
+
+struct Node {
+    int key;
+    Node* left;
+    Node* right;
+    explicit Node(int k) : key(k), left(nullptr), right(nullptr) {}
+};
+
+static Node* findMin(Node* node) {
+    while (node && node->left) node = node->left;
+    return node;
 }
 
-Node* deleteNode(Node* root, int key) {
+Node* deleteKey(Node* root, int k) {
     if (!root) return nullptr;
 
-    if (key < root->key) {
-        root->left = deleteNode(root->left, key);
-    }
-    else if (key > root->key) {
-        root->right = deleteNode(root->right, key);
-    }
-    else {
-        // 找到節點
+    if (k < root->key) {
+        root->left = deleteKey(root->left, k);
+    } else if (k > root->key) {
+        root->right = deleteKey(root->right, k);
+    } else {
+        // 找到要刪的節點 root
+        if (!root->left && !root->right) {
+            delete root;
+            return nullptr;
+        }
         if (!root->left) {
-            Node* temp = root->right;
+            Node* r = root->right;
             delete root;
-            return temp;
+            return r;
         }
-        else if (!root->right) {
-            Node* temp = root->left;
+        if (!root->right) {
+            Node* l = root->left;
             delete root;
-            return temp;
+            return l;
         }
 
-        // 兩個子節點
-        Node* temp = findMin(root->right);
-        root->key = temp->key;
-        root->right = deleteNode(root->right, temp->key);
+      
+        Node* succ = findMin(root->right);
+        root->key = succ->key;
+        root->right = deleteKey(root->right, succ->key);
     }
-
     return root;
 }
 ```
 ## 效能分析
+(a)
 ### 時間複雜度
 - 插入與搜尋時間複雜度:BST 的時間複雜度取決於樹的高度 
 |高度| 時間複雜度  |
@@ -284,8 +344,12 @@ Node* deleteNode(Node* root, int key) {
 - 每個節點：𝑂(1)
 - 總空間：𝑂(𝑛)
 
+(b)
+|程式|高度| 時間複雜度  |
+|----------|--------------|--------------|
+|deleteKey()|h|O(h)|
 ## 測試與驗證
-| 測試案例 | 輸入參數 n   | 預期輸出  height, height/log2(n) | 實際輸出 height, height/log2(n)| 
+| 測試案例 | 輸入參數 n   | 預期輸出  height, height/ $\log_2 n$  | 實際輸出 height, height/  $\log_2 n$ | 
 |----------|--------------|----------|----------|
 | 測試一   |   100    |  12         |   1.80618    | 
 | 測試二   |    1100   |     23    |   2.27649    | 
@@ -303,5 +367,7 @@ Node* deleteNode(Node* root, int key) {
 
 驗證了：
 - BST 在隨機插入下，高度約為 𝑂(log⁡ 𝑛)
-- 實際高度 $\log_2 n$ 與的比例為近似常數
+- 實際高度  $\log_2 n$  與的比例為近似常數
 - 刪除操作的複雜度同樣受樹高影響
+- 
+## 申論及開發報告
