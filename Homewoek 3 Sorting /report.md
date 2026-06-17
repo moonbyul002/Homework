@@ -1,54 +1,85 @@
 # 41343110 and 41343153
 # Homework Sorting Project
-# Problem
 ## 解題說明
-本題要求實作一套完整的排序效能分析框架，針對插入排序、快速排序、合併排序與堆積排序進行效能比較，並進一步設計一套動態混合排序策略。
-在實作架構上，程式透過精確的系統時鐘建立測試基準，並結合亂數生成器來模擬平均情況下的隨機資料分佈。
-此外，透過特定邏輯刻意產生反序數列，以精準測試各演算法在最差情況下的時間複雜度表現，藉此驗證其理論效率。
+首先我們先了解本次作業的目標是由 
+- 插入排序
+- 快速排序 
+- 歸併排序 
+- 堆排序
+
+這些去設計出一個複合排序函數
+，使其在最壞時間準則下表現良好。
 ## 程式實作
 ```
 #include <iostream>
 #include <vector>
 #include <algorithm>
-#include <random>
-#include <ctime>
 
-using namespace std;
+using namespace std; 
 
-// ---------- 各種排序法 ----------
-void InsertionSort(vector<int>& arr) {
-    int n = arr.size();
-    for (int i = 1; i < n; ++i) {
-        int x = arr[i], j = i - 1;
-        while (j >= 0 && arr[j] > x) arr[j + 1] = arr[j--];
-        arr[j + 1] = x;
+
+// Insertion Sort 
+void InsertionSortRange(vector<int>& arr, int left, int right) {
+    for (int i = left + 1; i <= right; ++i) {
+        int key = arr[i];
+        int j = i - 1;
+        while (j >= left && arr[j] > key) {
+            arr[j + 1] = arr[j];
+            j--;
+        }
+        arr[j + 1] = key;
     }
 }
 
+void InsertionSort(vector<int>& arr) {
+    if (arr.empty()) return;
+    InsertionSortRange(arr, 0, arr.size() - 1);
+}
+
+// Quick Sort 
 int medianOfThree(vector<int>& arr, int left, int right) {
     int mid = left + (right - left) / 2;
     if (arr[left] > arr[mid]) swap(arr[left], arr[mid]);
     if (arr[left] > arr[right]) swap(arr[left], arr[right]);
     if (arr[mid] > arr[right]) swap(arr[mid], arr[right]);
-    return mid;
-}
-void QuickSort(vector<int>& arr, int left, int right) {
-    if (left >= right) return;
-    int pivotIdx = medianOfThree(arr, left, right);
-    int pivot = arr[pivotIdx];
-    swap(arr[pivotIdx], arr[right]);
-    int i = left;
-    for (int j = left; j < right; ++j) {
-        if (arr[j] < pivot) swap(arr[i++], arr[j]);
-    }
-    swap(arr[i], arr[right]);
-    QuickSort(arr, left, i - 1);
-    QuickSort(arr, i + 1, right);
-}
-void QuickSort(vector<int>& arr) {
-    QuickSort(arr, 0, arr.size() - 1);
+    return mid; 
 }
 
+void QuickSortHelper(vector<int>& arr, int left, int right) {
+    if (left >= right) return;
+
+    int pivotIdx = medianOfThree(arr, left, right);
+    int pivotVal = arr[pivotIdx]; 
+
+
+    swap(arr[pivotIdx], arr[right - 1]);
+
+    int i = left;
+    int j = right - 1;
+
+    while (true) {
+        while (arr[++i] < pivotVal) {}
+        while (arr[--j] > pivotVal) {}
+        if (i < j) {
+            swap(arr[i], arr[j]);
+        }
+        else {
+            break;
+        }
+    }
+ 
+    swap(arr[i], arr[right - 1]);
+
+    QuickSortHelper(arr, left, i - 1);
+    QuickSortHelper(arr, i + 1, right);
+}
+
+void QuickSort(vector<int>& arr) {
+    if (arr.size() <= 1) return;
+    QuickSortHelper(arr, 0, arr.size() - 1);
+}
+
+// Merge Sort 
 void Merge(vector<int>& arr, int left, int mid, int right, vector<int>& tmp) {
     int i = left, j = mid + 1, k = left;
     while (i <= mid && j <= right) {
@@ -58,8 +89,10 @@ void Merge(vector<int>& arr, int left, int mid, int right, vector<int>& tmp) {
     while (j <= right) tmp[k++] = arr[j++];
     for (int l = left; l <= right; ++l) arr[l] = tmp[l];
 }
+
 void MergeSort(vector<int>& arr) {
     int n = arr.size();
+    if (n <= 1) return;
     vector<int> tmp(n);
     for (int sz = 1; sz < n; sz *= 2) {
         for (int left = 0; left < n - sz; left += 2 * sz) {
@@ -70,8 +103,11 @@ void MergeSort(vector<int>& arr) {
     }
 }
 
+// Heap Sort (Max-Heap)
 void Heapify(vector<int>& arr, int n, int i) {
-    int largest = i, l = 2 * i + 1, r = 2 * i + 2;
+    int largest = i;
+    int l = 2 * i + 1;
+    int r = 2 * i + 2;
     if (l < n && arr[l] > arr[largest]) largest = l;
     if (r < n && arr[r] > arr[largest]) largest = r;
     if (largest != i) {
@@ -79,108 +115,183 @@ void Heapify(vector<int>& arr, int n, int i) {
         Heapify(arr, n, largest);
     }
 }
+// Heap Sort
 void HeapSort(vector<int>& arr) {
     int n = arr.size();
+    if (n <= 1) return;
     for (int i = n / 2 - 1; i >= 0; --i) Heapify(arr, n, i);
     for (int i = n - 1; i > 0; --i) {
         swap(arr[0], arr[i]);
-        Heapify(arr, i, 0);
+        Heapify(arr, i, 0); 
     }
 }
 
-// ---------- 測試資料產生 ----------
+// Composite Sort function 
+void compositeSort(vector<int>& arr) {
+    int n = arr.size();
+    if (n <= 1) return;
+
+    int threshold = 20;
+    vector<int> tmp(n);
+
+    for (int sz = 1; sz < n; sz *= 2) {
+        if (sz < threshold) {
+            for (int left = 0; left < n; left += 2 * sz) {
+                int right = min(left + 2 * sz - 1, n - 1);
+                InsertionSortRange(arr, left, right);
+            }
+            continue; 
+        }
+
+        for (int left = 0; left < n - sz; left += 2 * sz) {
+            int mid = left + sz - 1;
+            int right = min(left + 2 * sz - 1, n - 1);
+            Merge(arr, left, mid, right, tmp);
+        }
+    }
+}
+
+
+// make a test 
 vector<int> worstCaseInsertion(int n) {
     vector<int> arr(n);
+    for (int i = 0; i < i; ++i) arr[i] = n - i; 
+    
     for (int i = 0; i < n; ++i) arr[i] = n - i;
     return arr;
 }
+
+void generateMergeWorst(vector<int>& arr, int left, int right) {
+    if (left >= right) return;
+    if (right - left == 1) {
+        swap(arr[left], arr[right]);
+        return;
+    }
+    vector<int> tmp(right - left + 1);
+    int mid = left + (right - left) / 2;
+    int lIdx = 0, rIdx = (mid - left + 1);
+
+    for (int i = left; i <= right; i += 2) {
+        tmp[lIdx++] = arr[i];
+        if (i + 1 <= right) tmp[rIdx++] = arr[i + 1];
+    }
+    for (int i = left; i <= right; ++i) arr[i] = tmp[i - left];
+
+    generateMergeWorst(arr, left, mid);
+    generateMergeWorst(arr, mid + 1, right);
+}
+
 vector<int> worstCaseMerge(int n) {
     vector<int> arr(n);
-    int t = 1;
-    for (int i = 0; i < n; ++i) arr[i] = t++;
-    next_permutation(arr.begin(), arr.end());
-    return arr;
-}
-vector<int> randomPermutation(int n, mt19937& rng) {
-    vector<int> arr(n);
     for (int i = 0; i < n; ++i) arr[i] = i + 1;
-    shuffle(arr.begin(), arr.end(), rng);
+    generateMergeWorst(arr, 0, n - 1);
     return arr;
 }
 
-// ---------- 效能測試框架 ----------
-typedef void(*SortFunc)(vector<int>&);
-double testSort(SortFunc sortFunc, vector<int> arr, int repeat = 1) {
-    clock_t start = clock();
-    for (int i = 0; i < repeat; ++i) {
-        vector<int> temp = arr;
-        sortFunc(temp);
+void Permute(vector<int>& arr) {
+    int n = arr.size();
+    for (int i = n - 1; i >= 1; i--) {
+        int j = rand() % (i + 1);
+        swap(arr[j], arr[i]);
     }
-    clock_t end = clock();
-    double ms = 1000.0 * (end - start) / CLOCKS_PER_SEC;
+}
+
+vector<int> randomPermutation(int n) {
+    vector<int> arr(n);
+    for (int i = 0; i < n; ++i) arr[i] = i + 1;
+    Permute(arr);
+    return arr;
+}
+
+
+typedef void(*SortFunc)(vector<int>&);
+
+double testSort(SortFunc sortFunc, const vector<int>& baseArr, int repeat = 1) {
+    clock_t startTotal = clock();
+    for (int i = 0; i < repeat; ++i) {
+        vector<int> temp = baseArr; 
+        sortFunc(temp);             
+    }
+    clock_t endTotal = clock();
+
+    clock_t startOverhead = clock();
+    for (int i = 0; i < repeat; ++i) {
+        vector<int> temp = baseArr; 
+    }
+    clock_t endOverhead = clock();
+
+    long totalTicks = (endTotal - startTotal) - (endOverhead - startOverhead);
+    if (totalTicks < 0) totalTicks = 0;
+
+    double ms = 1000.0 * totalTicks / CLOCKS_PER_SEC;
     return ms / repeat;
 }
 
-// ---------- 綜合 function ----------
-void compositeSort(vector<int>& arr) {
-    if (arr.size() < 20) {
-        InsertionSort(arr);
-    }
-    else if (arr.size() < 1000) {
-        QuickSort(arr);
-    }
-    else {
-        MergeSort(arr);
-    }
-}
 
-// ---------- 主程式樣板 ----------
 int main() {
-    vector<int> ns = { 500, 1000, 2000, 3000, 4000, 5000 };
-    random_device rd;
-    mt19937 rng(rd());
-    int heapPerms = 10, averagePerms = 20;
+    srand(2026);
 
-    // 計時精度
-    double clock_accuracy = testSort(InsertionSort, { 1,2,3,4,5 }, 10000);
-    cout << "Clock accuracy: " << clock_accuracy << " ms" << endl;
+    vector<int> ns = { 500, 1000, 2000, 3000, 4000, 5000 };
+    int heapPerms = 15;    
+    int averagePerms = 20; 
+
+  
+    cout << " 最壞狀況分析 (Worst-case Runtimes in ms)\n";
+   
 
     for (int n : ns) {
-        // Worst-case
-        double tIns = testSort(InsertionSort, worstCaseInsertion(n));
-        double tQ = testSort(QuickSort, worstCaseInsertion(n));
-        double tM = testSort(MergeSort, worstCaseMerge(n));
+        int r = (n <= 1000) ? 200 : 20;
+
+        vector<int> insWorst = worstCaseInsertion(n);
+        vector<int> mergeWorst = worstCaseMerge(n);
+
+        double tIns = testSort(InsertionSort, insWorst, r);
+        double tM = testSort(MergeSort, mergeWorst, r);
+        double tC = testSort(compositeSort, insWorst, r);
+
+        double tQ_max = 0;
         double tH_max = 0;
         for (int i = 0; i < heapPerms; ++i) {
-            double tH = testSort(HeapSort, randomPermutation(n, rng));
-            tH_max = max(tH_max, tH);
+            vector<int> randArr = randomPermutation(n);
+            tQ_max = max(tQ_max, testSort(QuickSort, randArr, r));
+            tH_max = max(tH_max, testSort(HeapSort, randArr, r));
         }
-        double tC = testSort(compositeSort, worstCaseInsertion(n));
-        cout << "n = " << n << " (worst-case ms)\n";
-        cout << "Insertion: " << tIns << "\tQuick: " << tQ << "\tMerge: " << tM << "\tHeap: " << tH_max << "\tComposite: " << tC << endl;
 
-        // Average-case
-        double aIns = 0, aQ = 0, aM = 0, aH = 0, aC = 0;
-        for (int i = 0; i < averagePerms; ++i) {
-            auto arr = randomPermutation(n, rng);
-            aIns += testSort(InsertionSort, arr);
-            aQ += testSort(QuickSort, arr);
-            aM += testSort(MergeSort, arr);
-            aH += testSort(HeapSort, arr);
-            aC += testSort(compositeSort, arr);
-        }
-        aIns /= averagePerms; aQ /= averagePerms; aM /= averagePerms; aH /= averagePerms; aC /= averagePerms;
-        cout << "n = " << n << " (average-case ms)\n";
-        cout << "Insertion: " << aIns << "\tQuick: " << aQ << "\tMerge: " << aM << "\tHeap: " << aH << "\tComposite: " << aC << endl;
+        cout << "n = " << n << " ->\n";
+        cout << "  Insertion: " << tIns << " ms\tQuick(Max): " << tQ_max << " ms\tMerge: " << tM 
+             << " ms\tHeap(Max): " << tH_max << " ms\tComposite: " << tC << " ms\n\n";
     }
+
+    cout << "平均狀況分析 (Average Runtimes in ms)\n";
+
+    for (int n : ns) {
+        double aIns = 0, aQ = 0, aM = 0, aH = 0, aC = 0;
+        int r = (n <= 1000) ? 50 : 5; 
+
+        for (int i = 0; i < averagePerms; ++i) {
+            vector<int> randArr = randomPermutation(n);
+
+            aIns += testSort(InsertionSort, randArr, r);
+            aQ += testSort(QuickSort, randArr, r);
+            aM += testSort(MergeSort, randArr, r);
+            aH += testSort(HeapSort, randArr, r);
+            aC += testSort(compositeSort, randArr, r);
+        }
+
+        cout << "n = " << n << " -> \n";
+        cout << "  Insertion: " << aIns / averagePerms << " ms\tQuick: " << aQ / averagePerms
+             << " ms\tMerge: " << aM / averagePerms << " ms\tHeap: " << aH / averagePerms
+             << " ms\tComposite: " << aC / averagePerms << " ms\n\n";
+    }
+
     return 0;
 }
 ```
 ## 效能分析
-#### 時間複雜度和空間複雜度
-| 演算法                  | 時間複雜度                  | 空間複雜度                                           |說明|
+先了解在不同的排序方法中，每個的時間複雜度在平均、最壞以及最好的情況下為多少。
+| Sorting                  | 平均                 | 最壞                                           |最好|
 |-----------------------|-----------------------------|---------------------------|------------------------------------|
-|Insertion Sort|$O(n^2)$ / $O(n^2)$|||
+|Insertion Sort|$O(n^2)$|$O(n^2)$|$O(n)$|
 |Quick Sort||||
 |Merge Sort||||
 |Heap Sort||||
